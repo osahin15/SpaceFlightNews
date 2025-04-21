@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -35,11 +36,20 @@ android {
 }
 
 dependencies {
-
+    implementation(project(":core:domain"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
+    implementation(libs.kotlinx.datetime)
+    implementation(libs.paging.runtime)
     implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gson)
+    implementation(libs.kotlinx.serialization.json)
+    //room
+    implementation(libs.room.runtime)
+    kapt(libs.room.compiler)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+
     implementation(libs.retrofit.gson)
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)

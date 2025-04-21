@@ -21,7 +21,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "SpaceFlightNews"
 include(":app")
-include(":core")
 include(":feature")
-include(":core:data")
-include(":core:domain")
+
+listOf(
+    "data",
+    "domain"
+).forEach { name ->
+    include(":core:$name")
+    project(":core:$name").projectDir = file("core/$name")
+}
+include(":core:ui")

@@ -1,4 +1,4 @@
-package com.onursahin.core
+package com.onursahin.ui
 
 import org.junit.Test
 

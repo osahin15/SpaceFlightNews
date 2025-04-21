@@ -9,10 +9,10 @@ data class PagedResponse<T>(
     val results: List<T>
 )
 
-data class NewsResults(
+data class NewsResultsResponse(
     @SerializedName("id") val id: Int?,
     @SerializedName("title") val title: String?,
-    @SerializedName("authors") val authors: List<Author>?,
+    @SerializedName("authors") val authors: List<AuthorResponse>?,
     @SerializedName("url") val url: String?,
     @SerializedName("image_url") val imageUrl: String?,
     @SerializedName("news_site") val newsSite: String?,
@@ -20,16 +20,16 @@ data class NewsResults(
     @SerializedName("published_at") val publishedAt: String?,
     @SerializedName("updated_at") val updatedAt: String?,
     @SerializedName("featured") val featured: Boolean?,
-    @SerializedName("launches") val launches: List<Launch>?,
-    @SerializedName("events") val events: List<Event>?
+    @SerializedName("launches") val launches: List<LaunchResponse>?,
+    @SerializedName("events") val events: List<EventResponse>?
 )
 
-data class Author(
+data class AuthorResponse(
     @SerializedName("name") val name: String?,
-    @SerializedName("socials") val socials: Socials?
+    @SerializedName("socials") val socials: SocialsResponse?
 )
 
-data class Socials(
+data class SocialsResponse(
     @SerializedName("x") val x: String?,
     @SerializedName("youtube") val youtube: String?,
     @SerializedName("instagram") val instagram: String?,
@@ -38,12 +38,12 @@ data class Socials(
     @SerializedName("bluesky") val bluesky: String?
 )
 
-data class Launch(
+data class LaunchResponse(
     @SerializedName("launch_id") val launchId: String?,
     @SerializedName("provider") val provider: String?
 )
 
-data class Event(
+data class EventResponse(
     @SerializedName("event_id") val eventId: Int?,
     @SerializedName("provider") val provider: String?
 )

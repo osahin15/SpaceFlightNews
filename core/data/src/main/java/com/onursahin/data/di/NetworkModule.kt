@@ -3,6 +3,7 @@ package com.onursahin.data.di
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.onursahin.data.network.ApiService
+import com.onursahin.data.network.SpaceNewsDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -11,6 +12,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -19,6 +21,7 @@ object RetrofitModule {
 
     @Provides
     @Singleton
+    @Named("baseUrl")
     fun provideBaseUrl(): String = "https://api.spaceflightnewsapi.net/"
 
     @Provides
@@ -38,7 +41,7 @@ object RetrofitModule {
     @Provides
     @Singleton
     fun provideRetrofit(
-        baseUrl: String,
+        @Named("baseUrl") baseUrl: String,
         gson: Gson,
         okHttpClient: OkHttpClient
     ): Retrofit = Retrofit.Builder()
@@ -51,4 +54,5 @@ object RetrofitModule {
     @Singleton
     fun provideApiService(retrofit: Retrofit): ApiService =
         retrofit.create(ApiService::class.java)
+
 }

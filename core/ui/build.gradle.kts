@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.onursahin.core"
+    namespace = "com.onursahin.ui"
     compileSdk = 35
 
     defaultConfig {
