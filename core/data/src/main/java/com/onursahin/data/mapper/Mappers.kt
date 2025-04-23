@@ -42,6 +42,21 @@ fun NewsResultsResponse.toUiModel() = News(
     events = events?.map { it.toUiModel() }.orEmpty()
 )
 
+fun NewsResultsResponse.toEntity() = NewsEntity(
+    id = id.orZero(),
+    title = title.orEmpty(),
+    authors = authors?.map { it.toEntity() }.orEmpty(),
+    url = url.orEmpty(),
+    imageUrl = imageUrl.orEmpty(),
+    newsSite = newsSite.orEmpty(),
+    summary = summary.orEmpty(),
+    publishedAt = publishedAt.toDateString(),
+    updatedAt = updatedAt.toDateString(),
+    featured = featured.orFalse(),
+    launches = launches?.map { it.toEntity() }.orEmpty(),
+    events = events?.map { it.toEntity() }.orEmpty()
+)
+
 fun NewsEntity.toUiModel() = News(
     id = id.orZero(),
     title = title,
@@ -142,7 +157,7 @@ fun String?.toDateString(): String {
                 monthNumber()
                 char('-')
                 dayOfMonth()
-
+                char(' ')
                 hour()
                 char(':')
                 minute()

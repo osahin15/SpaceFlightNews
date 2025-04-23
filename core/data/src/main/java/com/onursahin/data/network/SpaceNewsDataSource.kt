@@ -9,7 +9,7 @@ class SpaceNewsDataSource @Inject constructor(val apiService: ApiService) {
         apiService.getArticles(limit = limit, offset = offset, search = search)
     }
 
-    suspend fun getArticleDetailWithId(id: Int) = getResult {
+    suspend fun getArticleWithId(id: Int) = getResult {
         apiService.getArticleDetailWithId(id)
     }
 }

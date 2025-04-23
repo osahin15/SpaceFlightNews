@@ -1,4 +1,4 @@
-package com.onursahin.domain
+package com.onursahin.domain.base
 
 import javax.inject.Qualifier
 

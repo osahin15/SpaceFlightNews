@@ -1,8 +1,8 @@
 package com.onursahin.domain.di
 
-import com.onursahin.domain.DispatcherDefault
-import com.onursahin.domain.DispatcherIO
-import com.onursahin.domain.DispatcherMain
+import com.onursahin.domain.base.DispatcherDefault
+import com.onursahin.domain.base.DispatcherIO
+import com.onursahin.domain.base.DispatcherMain
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

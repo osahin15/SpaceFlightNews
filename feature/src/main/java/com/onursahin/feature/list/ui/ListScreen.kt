@@ -1,72 +1,77 @@
 package com.onursahin.feature.list.ui
 
 import AnimatedSearchBar
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
+import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import coil.request.ImageRequest
 import com.onursahin.domain.model.News
-import com.onursahin.feature.list.viewmodel.NewsArticlesViewModel
+import com.onursahin.feature.detail.navigation.DetailRoute
+import com.onursahin.feature.list.navigation.GoBack
+import com.onursahin.feature.list.ui.ListScreenContract.Event.OnErrorSnackBar
+import com.onursahin.feature.list.ui.ListScreenContract.Event.OnSearchQueryChanged
+import com.onursahin.ui.component.ArticleItem
+import com.onursahin.ui.utils.DevicePreviews
+import com.onursahin.ui.utils.NavigateHandler
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListScreen(vm: NewsArticlesViewModel, onItemClick: (Int) -> Unit) {
-    val query by vm.searchQuery.collectAsStateWithLifecycle()
-    val lazyPagingItems = vm.articlesUiFlow.collectAsLazyPagingItems()
-    val snackbarHostState = remember { SnackbarHostState() }
+fun ListScreen(
+    state: ListScreenContract.State,
+    onEvent: (ListScreenContract.Event) -> Unit,
+    effect: Flow<ListScreenContract.Effect>,
+    navigate: NavigateHandler
+) {
+    val lazyPagingItems = state.list.collectAsLazyPagingItems()
+    val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
+
+    var prevCount by remember { mutableIntStateOf(lazyPagingItems.itemCount) }
+    var showSearchBar by remember { mutableStateOf(true) }
 
     var isSearchExpanded by remember { mutableStateOf(false) }
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
@@ -75,40 +80,95 @@ fun ListScreen(vm: NewsArticlesViewModel, onItemClick: (Int) -> Unit) {
         animationSpec = tween(durationMillis = 300)
     )
 
-    LaunchedEffect(lazyPagingItems.loadState.refresh) {
-        val refreshState = lazyPagingItems.loadState.refresh
-        if (refreshState is LoadState.Error) {
-            val result = snackbarHostState.showSnackbar(
-                message = "İnternet bağlantısı yok.",
-                actionLabel = "Yeniden Dene"
-            )
-            if (result == SnackbarResult.ActionPerformed) {
-                lazyPagingItems.retry()
+    BackHandler {
+        navigate.invoke(GoBack)
+    }
+
+    LaunchedEffect(lazyPagingItems) {
+        snapshotFlow { lazyPagingItems.itemCount }
+            .collect { count ->
+                if (count > prevCount) {
+                    listState.animateScrollToItem(0)
+                }
+                prevCount = count
+            }
+    }
+
+    LaunchedEffect(listState) {
+        var prevIndex = listState.firstVisibleItemIndex
+        var prevOffset = listState.firstVisibleItemScrollOffset
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect { (index, offset) ->
+                showSearchBar = if (index != prevIndex) {
+                    index <= prevIndex
+                } else {
+                    offset <= prevOffset
+                }
+                prevIndex = index
+                prevOffset = offset
+            }
+    }
+
+
+    LaunchedEffect(effect) {
+        effect.collect { effect ->
+            when (effect) {
+                is ListScreenContract.Effect.ShowSnackBar -> {
+                    val result = snackBarHostState.showSnackbar(
+                        effect.message,
+                        actionLabel = effect.actionLabel,
+                        withDismissAction = effect.isDismiss
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        lazyPagingItems.retry()
+                    }
+                }
             }
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Column {
-                AnimatedSearchBar(
-                    isSearchExpanded = isSearchExpanded,
-                    searchExpanded = { isSearchExpanded = it },
-                    searchWidth = searchWidth,
-                    query = query.orEmpty(),
-                    setSearchQuery = vm::setSearchQuery,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AnimatedVisibility(
+                    visible = showSearchBar,
+                    enter = slideInVertically(initialOffsetY = { -it }, animationSpec = tween(300)),
+                    exit = slideOutVertically(targetOffsetY = { -it }, animationSpec = tween(300))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        AnimatedSearchBar(
+                            isSearchExpanded = isSearchExpanded,
+                            searchExpanded = { isSearchExpanded = it },
+                            searchWidth = searchWidth,
+                            query = state.searchQuery.orEmpty(),
+                            setSearchQuery = { onEvent(OnSearchQueryChanged(it)) },
+                            modifier = Modifier.padding(horizontal = 12.dp)
+                        )
+
+                        FavoriteButton(!isSearchExpanded) {
+                            //FavoriteScreen
+                        }
+
+                    }
+
+                }
                 ArticleListContent(
                     listState = listState,
                     lazyPagingItems = lazyPagingItems,
-                    onItemClick = onItemClick
+                    onEvent = onEvent,
+                    onItemClick = {
+                        navigate.invoke(DetailRoute(it))
+                    }
                 )
             }
             if (lazyPagingItems.loadState.refresh is LoadState.Loading) {
@@ -121,52 +181,12 @@ fun ListScreen(vm: NewsArticlesViewModel, onItemClick: (Int) -> Unit) {
     }
 }
 
-@Composable
-private fun SearchField(
-    isSearchExpanded: Boolean,
-    searchExpanded: (Boolean) -> Unit,
-    searchWidth: Dp,
-    query: String?,
-    setSearchQuery: (String) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .width(searchWidth)
-            .height(56.dp)
-    ) {
-        if (!isSearchExpanded) {
-            IconButton(
-                onClick = { searchExpanded(true) },
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(12.dp)
-                    .border(1.dp, Color.Black)
-            ) {
-                Icon(Icons.Default.Search, contentDescription = "Open search")
-            }
-        } else {
-            OutlinedTextField(
-                value = query.orEmpty(),
-                onValueChange = { setSearchQuery(it) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(onClick = { searchExpanded(false) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close search")
-                    }
-                },
-                label = { Text("Filter Title or Summary Text") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight()
-            )
-        }
-    }
-}
 
 @Composable
 private fun ArticleListContent(
     listState: LazyListState,
     lazyPagingItems: LazyPagingItems<News>,
+    onEvent: (ListScreenContract.Event) -> Unit,
     onItemClick: (Int) -> Unit
 ) {
     LazyColumn(state = listState) {
@@ -182,8 +202,8 @@ private fun ArticleListContent(
             }
         }
         item {
-            when (lazyPagingItems.loadState.append) {
-                is LoadState.Loading -> {
+            when {
+                lazyPagingItems.loadState.append is LoadState.Loading -> {
                     Box(
                         Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
@@ -192,93 +212,76 @@ private fun ArticleListContent(
                     }
                 }
 
-                is LoadState.Error -> {
-                    Text("Yüklenirken hata oldu")
+                lazyPagingItems.loadState.append is LoadState.Error -> {
+                    val error = (lazyPagingItems.loadState.append as LoadState.Error).error
+                    onEvent(OnErrorSnackBar(error, isDismiss = true))
                 }
 
-                else -> {}
+                lazyPagingItems.loadState.refresh is LoadState.Error -> {
+                    val error = (lazyPagingItems.loadState.refresh as LoadState.Error).error
+                    onEvent(OnErrorSnackBar(error, actionLabel = "Try again", isDismiss = true))
+                }
             }
+
         }
     }
 }
 
 @Composable
-private fun ArticleItem(
-    article: News,
-    onItemClick: (Int) -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(12.dp),
-        onClick = {
-            onItemClick.invoke(article.id)
-        }
+fun FavoriteButton(isVisible: Boolean, onClick: () -> Unit) {
+    AnimatedVisibility(
+        visible = isVisible
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+        IconButton(
+            onClick = {
+                onClick.invoke()
+            },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+                .padding(end = 12.dp)
+                .size(56.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    RoundedCornerShape(percent = 50)
+                )
         ) {
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(article.imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-            ) {
-                when (painter.state) {
-                    is AsyncImagePainter.State.Loading -> {
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .background(Color.LightGray)
-                        )
-                    }
-
-                    is AsyncImagePainter.State.Error -> {
-                        Box(
-                            Modifier
-                                .matchParentSize()
-                                .background(Color.Red.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                modifier = Modifier.size(50.dp)
-                            )
-                        }
-                    }
-
-                    else -> {
-                        SubcomposeAsyncImageContent()
-                    }
-                }
-            }
-            Text(
-                text = article.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            Text(
-                text = article.summary,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Text(
-                text = article.publishedAt,
-                style = MaterialTheme.typography.bodySmall,
+            Icon(
+                Icons.Outlined.FavoriteBorder,
+                modifier = Modifier.size(28.dp),
+                contentDescription = "Favorite"
             )
         }
     }
+
 }
+
+
+@DevicePreviews
+@Composable
+fun ListScreenPreview() {
+    val fakeData = List(10) {
+        News(
+            id = it,
+            title = "SpaceX launches third mid-inclination rideshare mission",
+            url = "https://spacenews.com/spacex-launches-third-mid-inclination-rideshare-mission/",
+            imageUrl = "https://i0.wp.com/spacenews.com/wp-content/uploads/2025/04/f9-bandwagon3.jpeg?fit=1024%2C768&quality=89&ssl=1",
+            newsSite = "Example News Site",
+            authors = emptyList(),
+            featured = false,
+            launches = emptyList(),
+            events = emptyList(),
+            updatedAt = "",
+            summary = "SpaceX launched the third in its series of mid-inclination dedicated rideshare missions April 21, but with very few rideshare payloads on board.\\r\\nThe post SpaceX launches third mid-inclination rideshare mission appeared first on SpaceNews",
+            publishedAt = ""
+        )
+    }
+
+    val pagingData = PagingData.from(fakeData)
+    val fakeDataFlow = MutableStateFlow(pagingData)
+    ArticleListContent(
+        listState = rememberLazyListState(),
+        lazyPagingItems = fakeDataFlow.collectAsLazyPagingItems(),
+        onItemClick = {},
+        onEvent = {}
+    )
+}
+

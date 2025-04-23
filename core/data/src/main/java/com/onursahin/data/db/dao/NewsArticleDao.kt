@@ -12,6 +12,9 @@ interface NewsArticleDao {
     @Query("SELECT * FROM news_article ORDER BY publishedAt DESC")
     fun pagingSource(): PagingSource<Int, NewsEntity>
 
+    @Query("SELECT * FROM news_article WHERE id = :id LIMIT 1")
+    suspend fun getNewsById(id: Int): NewsEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(newsArticles: List<NewsEntity>)
 

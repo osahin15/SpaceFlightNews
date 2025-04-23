@@ -13,7 +13,7 @@ import com.onursahin.data.network.SpaceNewsDataSource
 import com.onursahin.data.network.SpaceNewsPagingRemoteMediator
 import com.onursahin.data.network.SpaceNewsPagingRemoteMediator.Companion.DEFAULT_PAGE_SIZE
 import com.onursahin.data.response.NewsResultsResponse
-import com.onursahin.domain.UiResponse
+import com.onursahin.domain.base.UiResponse
 import com.onursahin.domain.model.News
 import com.onursahin.domain.repository.SpaceNewsRepository
 import kotlinx.coroutines.flow.Flow
@@ -67,6 +67,11 @@ class SpaceNewsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getArticleWithId(id: Int): UiResponse<News> {
-        TODO("Not yet implemented")
+        val localResponse = articleDao.getNewsById(id)?.toUiModel()
+        return if (localResponse != null) {
+            UiResponse.Success(localResponse)
+        } else {
+            dataSource.getArticleWithId(id).toUiResponse { it.toUiModel() }
+        }
     }
 }

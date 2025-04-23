@@ -80,7 +80,7 @@ fun AnimatedSearchBar(
                 }
             },
         shape = RoundedCornerShape(percent = cornerRadiusPercent),
-        color = searchBgColor,
+        color = searchBgColor.copy(0.3f),
         contentColor = textColor
     ) {
         Box(
@@ -116,7 +116,7 @@ fun AnimatedSearchBar(
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent,
                         focusedTextColor = textColor,
-                        unfocusedTextColor = textColor
+                        unfocusedTextColor = unfocusedTextColor
                     ),
                     placeholder = {
                         Text(

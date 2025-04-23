@@ -1,8 +1,9 @@
 package com.onursahin.data.network
 
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.onursahin.data.base.PagingSourceThrowable
 import com.onursahin.data.base.RemoteResponse
 import com.onursahin.data.response.NewsResultsResponse
 import javax.inject.Inject
@@ -19,15 +20,13 @@ class SearchNewsPagingSource @Inject constructor(
             val response =
                 dataSource.getArticles(limit = DEFAULT_PAGE_SIZE, offset = offset, search = query)
             if (response is RemoteResponse.Error) {
-                return LoadResult.Error(response.exception)
+                return LoadResult.Error(PagingSourceThrowable(response.exception.message))
             }
             val result = (response as RemoteResponse.Success).result
 
-            val nextOffset = result.next
-                ?.let { Uri.parse(it).getQueryParameter("offset") }
+            val nextOffset = result.next?.toUri()?.getQueryParameter("offset")
                 ?.toIntOrNull()
-            val prevOffset = result.previous
-                ?.let { Uri.parse(it).getQueryParameter("offset") }
+            val prevOffset = result.previous?.toUri()?.getQueryParameter("offset")
                 ?.toIntOrNull()
 
             LoadResult.Page(

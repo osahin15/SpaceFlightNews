@@ -1,7 +1,7 @@
 package com.onursahin.domain.repository
 
 import androidx.paging.PagingData
-import com.onursahin.domain.UiResponse
+import com.onursahin.domain.base.UiResponse
 import com.onursahin.domain.model.News
 import kotlinx.coroutines.flow.Flow
 
