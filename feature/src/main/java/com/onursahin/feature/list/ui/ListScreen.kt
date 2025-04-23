@@ -31,6 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +51,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.onursahin.domain.model.News
 import com.onursahin.feature.detail.navigation.DetailRoute
+import com.onursahin.feature.favorite.navigation.FavoriteNewsRoute
 import com.onursahin.feature.list.navigation.GoBack
 import com.onursahin.feature.list.ui.ListScreenContract.Event.OnErrorSnackBar
 import com.onursahin.feature.list.ui.ListScreenContract.Event.OnSearchQueryChanged
@@ -156,28 +159,29 @@ fun ListScreen(
                         )
 
                         FavoriteButton(!isSearchExpanded) {
-                            //FavoriteScreen
+                            navigate(FavoriteNewsRoute)
                         }
 
                     }
 
                 }
-                ArticleListContent(
-                    listState = listState,
-                    lazyPagingItems = lazyPagingItems,
-                    onEvent = onEvent,
-                    onItemClick = {
-                        navigate.invoke(DetailRoute(it))
-                    }
-                )
-            }
-            if (lazyPagingItems.loadState.refresh is LoadState.Loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                PullToRefreshBox(
+                    state = rememberPullToRefreshState(),
+                    modifier = Modifier.weight(1f),
+                    onRefresh = { lazyPagingItems.refresh() },
+                    isRefreshing = lazyPagingItems.loadState.refresh is LoadState.Loading
+                ) {
+                    ArticleListContent(
+                        listState = listState,
+                        lazyPagingItems = lazyPagingItems,
+                        onEvent = onEvent,
+                        onItemClick = {
+                            navigate.invoke(DetailRoute(it))
+                        }
+                    )
                 }
             }
         }
-
     }
 }
 

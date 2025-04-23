@@ -9,14 +9,16 @@ class DetailScreenContract {
 
     sealed class Event : ViewEvent {
 
-        data class OnAddFavorite(val news: News) : Event()
+        data class OnAddFavorite(val news: News?) : Event()
+        data class GetIsFavorite(val newsId : Int) : Event()
         data class GetDetailWithId(val id: Int) : Event()
 
     }
 
     data class State(
         val news: News? = null,
-        val isLoadings: Boolean
+        val isLoadings: Boolean = false,
+        val isFavorite : Boolean = false
     ) : ViewState
 
     sealed class Effect : ViewSideEffect {

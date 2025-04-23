@@ -1,6 +1,8 @@
 package com.onursahin.data.di
 
+import com.onursahin.data.repository.FavoriteNewsRepositoryImpl
 import com.onursahin.data.repository.SpaceNewsRepositoryImpl
+import com.onursahin.domain.repository.FavoriteNewsRepository
 import com.onursahin.domain.repository.SpaceNewsRepository
 import dagger.Binds
 import dagger.Module
@@ -15,5 +17,10 @@ abstract class RepositoryModule {
     abstract fun bindSpaceNewsRepository(
         impl: SpaceNewsRepositoryImpl
     ): SpaceNewsRepository
+
+    @Binds
+    abstract fun bindFavoriteNewsRepository(
+        impl: FavoriteNewsRepositoryImpl
+    ): FavoriteNewsRepository
 
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,11 +27,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -42,8 +48,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.onursahin.domain.model.News
 import com.onursahin.domain.model.Socials
+import com.onursahin.domain.util.orZero
 import com.onursahin.feature.R
 import com.onursahin.feature.list.navigation.GoBack
+import com.onursahin.ui.component.EmptyState
 import com.onursahin.ui.component.NewsAsyncImage
 import com.onursahin.ui.component.SocialMediaIcon
 import com.onursahin.ui.utils.DevicePreviews
@@ -68,58 +76,74 @@ fun DetailScreen(
             .build()
     }
 
+    val snackBarState = remember { SnackbarHostState() }
+    var favoriteButtonVisible by remember { mutableStateOf(true) }
+
     BackHandler {
         navigate(GoBack)
+    }
+
+    LaunchedEffect(news) {
+        onEvent(DetailScreenContract.Event.GetIsFavorite(news?.id.orZero()))
     }
 
     LaunchedEffect(effect) {
         effect.collect { effect ->
             when (effect) {
                 is DetailScreenContract.Effect.ShowSnackBar -> {
-
+                    snackBarState.showSnackbar(
+                        effect.message,
+                        actionLabel = effect.actionLabel,
+                        withDismissAction = effect.isDismiss
+                    )
                 }
             }
         }
     }
 
-    if (news != null) {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(text = "Space Flight News")
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navigate(GoBack) }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
-                    },
-                    actions = {
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackBarState) },
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "Space Flight News")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navigate(GoBack) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    if (favoriteButtonVisible) {
                         IconButton(onClick = {
                             onEvent(DetailScreenContract.Event.OnAddFavorite(news))
                         }) {
                             Icon(
-                                imageVector = Icons.Filled.FavoriteBorder,
+                                imageVector = if (state.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                                 contentDescription = "Favorite"
                             )
                         }
                     }
-                )
-            }
-        ) { innerPadding ->
-            if (state.isLoadings) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
                 }
+            )
+        }
+    ) { innerPadding ->
+        if (state.isLoadings) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        } else if (news != null) {
+            favoriteButtonVisible = true
             Column(
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
-                    .verticalScroll(state = ScrollState(0))
+                    .verticalScroll(state = ScrollState(0)),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -154,22 +178,18 @@ fun DetailScreen(
                                 .padding(16.dp)
                         )
                     }
-
                 }
-                Spacer(modifier = Modifier.height(16.dp))
                 SocialMediaContent(news.authors.firstOrNull()?.socials)
-                Spacer(modifier = Modifier.height(16.dp))
                 SummaryContent(news = news) {
                     customTabsIntent.launchUrl(context, it.toUri())
                 }
 
             }
+        } else {
+            favoriteButtonVisible = false
+            EmptyState()
         }
-
-    } else {
-        EmptyState()
     }
-
 }
 
 @Composable
@@ -217,25 +237,27 @@ fun SummaryContent(news: News, customTabsIntent: (String) -> Unit) {
             .padding(horizontal = 8.dp)
             .fillMaxWidth(),
         shape = CardDefaults.elevatedShape,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 5.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 5.dp)
     ) {
         Text(
             text = news.summary,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(
                 text = news.newsSite,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Blue,
                 textDecoration = TextDecoration.Underline,
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
                     .clickable {
                         if (news.url.isNotBlank()) {
                             customTabsIntent.invoke(news.url)
@@ -246,9 +268,7 @@ fun SummaryContent(news: News, customTabsIntent: (String) -> Unit) {
             Text(
                 text = news.publishedAt,
                 style = MaterialTheme.typography.labelSmall,
-                color = Color.Black.copy(alpha = 0.5f),
                 modifier = Modifier
-                    .padding(horizontal = 16.dp)
             )
         }
 
@@ -264,13 +284,6 @@ fun SummaryContent(news: News, customTabsIntent: (String) -> Unit) {
         )
     }
 
-}
-
-@Composable
-fun EmptyState() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = "No data to show")
-    }
 }
 
 
@@ -293,6 +306,18 @@ fun DetailScreenPreview() {
                 summary = "SpaceX launched the third in its series of mid-inclination dedicated rideshare missions April 21, but with very few rideshare payloads on board.\\r\\nThe post SpaceX launches third mid-inclination rideshare mission appeared first on SpaceNews",
                 publishedAt = ""
             ), isLoadings = false
+        ),
+        onEvent = {},
+        effect = flowOf()
+    ) { }
+}
+
+@DevicePreviews
+@Composable
+fun DetailScreenEmptyPreview() {
+    DetailScreen(
+        state = DetailScreenContract.State(
+            news = null, isLoadings = false
         ),
         onEvent = {},
         effect = flowOf()

@@ -3,6 +3,7 @@ package com.onursahin.data.di
 import android.content.Context
 import androidx.room.Room
 import com.onursahin.data.db.AppDatabase
+import com.onursahin.data.db.dao.FavoriteNewsDao
 import com.onursahin.data.db.dao.NewsArticleDao
 import com.onursahin.data.db.dao.RemoteKeysDao
 import dagger.Module
@@ -38,4 +39,9 @@ object DatabaseModule {
     @Singleton
     fun provideRemoteKeysDao(db: AppDatabase): RemoteKeysDao =
         db.remoteKeysDao()
+
+    @Provides
+    @Singleton
+    fun provideFavoritesDao(db: AppDatabase): FavoriteNewsDao =
+        db.favoriteNewsDao()
 }

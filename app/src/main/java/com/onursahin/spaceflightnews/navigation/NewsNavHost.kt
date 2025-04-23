@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import com.onursahin.feature.detail.navigation.detailScreen
+import com.onursahin.feature.favorite.navigation.favoriteNewsScreen
 import com.onursahin.feature.list.navigation.GoBack
 import com.onursahin.feature.list.navigation.NewsListRoute
 import com.onursahin.feature.list.navigation.newsListScreen
@@ -30,5 +31,6 @@ fun NewsNavHost(
         }
         newsListScreen(navigateHandler)
         detailScreen(navigateHandler)
+        favoriteNewsScreen(navigateHandler)
     }
 }

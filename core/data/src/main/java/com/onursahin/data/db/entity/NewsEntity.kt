@@ -38,5 +38,3 @@ data class LaunchDto(val launch_id: String, val provider: String)
 
 @Serializable
 data class EventDto(val event_id: Int, val provider: String)
-
-
