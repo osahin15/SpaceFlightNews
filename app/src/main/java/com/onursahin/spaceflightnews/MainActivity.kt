@@ -8,9 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -31,7 +29,7 @@ class MainActivity : ComponentActivity() {
         handleError()
         setContent {
             SpaceFlightNewsTheme {
-                Scaffold{ innerPadding ->
+                Scaffold { innerPadding ->
                     Surface(
                         modifier = Modifier
                             .fillMaxSize()
