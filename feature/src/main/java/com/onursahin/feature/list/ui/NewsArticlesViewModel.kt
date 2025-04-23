@@ -7,6 +7,8 @@ import com.onursahin.domain.model.News
 import com.onursahin.domain.usecase.SpaceNewsPagingUseCase
 import com.onursahin.ui.base.BaseComposeViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -23,11 +25,12 @@ class NewsArticlesViewModel @Inject constructor(
     private val newsUseCase: SpaceNewsPagingUseCase
 ) : BaseComposeViewModel<ListScreenContract.Event, ListScreenContract.State, ListScreenContract.Effect>() {
 
-    private val _searchQuery = MutableStateFlow<String?>(null)
+    private val _searchQuery = MutableStateFlow<String>("")
 
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private val articlesUiFlow: StateFlow<PagingData<News>> =
         _searchQuery
-            .debounce(300)
+            .debounce(300L)
             .distinctUntilChanged()
             .flatMapLatest { query ->
                 newsUseCase(query).cachedIn(viewModelScope)
@@ -67,16 +70,16 @@ class NewsArticlesViewModel @Inject constructor(
 
     override fun handleEvents(event: ListScreenContract.Event) {
         when (event) {
-            is ListScreenContract.Event.OnSearchQueryChanged -> setSearchQuery(query = event.query)
+            is ListScreenContract.Event.OnSearchQueryChanged -> {
+                setSearchQuery(event.query)
+            }
             is ListScreenContract.Event.OnErrorSnackBar -> {
-                viewModelScope.launch {
-                    setEffect {
-                        ListScreenContract.Effect.ShowSnackBar(
-                            message = event.error.message.orEmpty(),
-                            actionLabel = event.actionLabel,
-                            isDismiss = event.isDismiss
-                        )
-                    }
+                setEffect {
+                    ListScreenContract.Effect.ShowSnackBar(
+                        message = event.error.message.orEmpty(),
+                        actionLabel = event.actionLabel,
+                        isDismiss = event.isDismiss
+                    )
                 }
             }
         }

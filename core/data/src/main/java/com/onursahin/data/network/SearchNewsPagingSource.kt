@@ -19,21 +19,32 @@ class SearchNewsPagingSource @Inject constructor(
             val offset = params.key ?: 0
             val response =
                 dataSource.getArticles(limit = DEFAULT_PAGE_SIZE, offset = offset, search = query)
-            if (response is RemoteResponse.Error) {
-                return LoadResult.Error(PagingSourceThrowable(response.exception.message))
+            when (val data = response) {
+                is RemoteResponse.Error -> {
+                    LoadResult.Error(PagingSourceThrowable(data.exception.message))
+                }
+
+                is RemoteResponse.Success -> {
+                    if (data.result.results.isNotEmpty()) {
+                        val nextOffset = data.result.next?.toUri()?.getQueryParameter("offset")
+                            ?.toIntOrNull()
+                        val prevOffset = data.result.previous?.toUri()?.getQueryParameter("offset")
+                            ?.toIntOrNull()
+
+                        LoadResult.Page(
+                            data = data.result.results,
+                            prevKey = prevOffset,
+                            nextKey = nextOffset
+                        )
+                    } else {
+                        LoadResult.Page(
+                            data = emptyList(),
+                            prevKey = null,
+                            nextKey = null
+                        )
+                    }
+                }
             }
-            val result = (response as RemoteResponse.Success).result
-
-            val nextOffset = result.next?.toUri()?.getQueryParameter("offset")
-                ?.toIntOrNull()
-            val prevOffset = result.previous?.toUri()?.getQueryParameter("offset")
-                ?.toIntOrNull()
-
-            LoadResult.Page(
-                data = result.results,
-                prevKey = prevOffset,
-                nextKey = nextOffset
-            )
         } catch (e: Exception) {
             LoadResult.Error(e)
         }

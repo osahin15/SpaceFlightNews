@@ -198,19 +198,25 @@ fun EventDto.toUiModel() = Event(
     provider = provider
 )
 
-fun String?.toDateString(): String {
-    return Instant.parse(this.toString())?.let {
-        it.toLocalDateTime(TimeZone.currentSystemDefault()).format(
-            LocalDateTime.Format {
-                year()
-                char('-')
-                monthNumber()
-                char('-')
-                dayOfMonth()
-                char(' ')
-                hour()
-                char(':')
-                minute()
-            })
-    }.orEmpty()
-}
+fun String?.toDateString(): String = this
+    .orEmpty()
+    .let { raw ->
+        runCatching {
+            Instant.parse(raw)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+        }.mapCatching { localDateTime ->
+            localDateTime.format(
+                LocalDateTime.Format {
+                    year()
+                    char('-')
+                    monthNumber()
+                    char('-')
+                    dayOfMonth()
+                    char(' ')
+                    hour()
+                    char(':')
+                    minute()
+                }
+            )
+        }.getOrDefault("")
+    }

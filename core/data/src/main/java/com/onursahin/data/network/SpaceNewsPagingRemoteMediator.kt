@@ -15,6 +15,7 @@ import com.onursahin.data.db.AppDatabase
 import com.onursahin.data.db.entity.NewsEntity
 import com.onursahin.data.db.entity.RemoteKeys
 import com.onursahin.data.mapper.toEntity
+import com.onursahin.domain.util.orZero
 import javax.inject.Inject
 
 @OptIn(ExperimentalPagingApi::class)
@@ -50,30 +51,31 @@ class SpaceNewsPagingRemoteMediator @Inject constructor(
 
                 is RemoteResponse.Success -> {
                     val result = data.result
-                    val articles = result.results.map { it.toEntity() }
+                    if (result.results.isNotEmpty()) {
+                        val articles = result.results.map { it.toEntity() }
 
-                    val nextOffset = result.next?.toUri()?.getQueryParameter("offset")
-                        ?.toIntOrNull()
-                    val prevOffset = result.previous?.toUri()?.getQueryParameter("offset")
-                        ?.toIntOrNull()
+                        val nextOffset = result.next?.toUri()?.getQueryParameter("offset")
+                            ?.toIntOrNull()
+                        val prevOffset = result.previous?.toUri()?.getQueryParameter("offset")
+                            ?.toIntOrNull()
 
-                    db.withTransaction {
-                        if (loadType == LoadType.REFRESH) {
-                            remoteKeysDao.clearRemoteKeys()
-                            articleDao.clearAll()
-                        }
-                        val keys = articles.map { article ->
-                            RemoteKeys(
-                                articleId = article.id,
+                        db.withTransaction {
+                            if (loadType == LoadType.REFRESH) {
+                                remoteKeysDao.clearRemoteKeys()
+                                articleDao.clearAll()
+                            }
+                            val keys = RemoteKeys(
+                                articleId = articles.lastOrNull()?.id.orZero(),
                                 prevOffset = prevOffset,
                                 nextOffset = nextOffset
                             )
+                            remoteKeysDao.insertKey(keys)
+                            articleDao.insertAll(articles)
                         }
-                        remoteKeysDao.insertAll(keys)
-                        articleDao.insertAll(articles)
-                        keys.forEach { println(it.toString()) }
+                        return Success(endOfPaginationReached = (nextOffset == null))
+                    } else {
+                        return Success(endOfPaginationReached = true)
                     }
-                    return Success(endOfPaginationReached = (nextOffset == null))
                 }
             }
 

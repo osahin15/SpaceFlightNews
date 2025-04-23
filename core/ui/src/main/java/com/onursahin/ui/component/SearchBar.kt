@@ -101,7 +101,10 @@ fun AnimatedSearchBar(
                     textStyle = TextStyle(color = textColor),
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = {
-                        IconButton(onClick = { searchExpanded(false) }) {
+                        IconButton(onClick = {
+                            searchExpanded(false)
+                            setSearchQuery("")
+                        }) {
                             Icon(Icons.Default.Close, contentDescription = "Close search")
                         }
                     },

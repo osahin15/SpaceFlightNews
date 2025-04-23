@@ -32,9 +32,6 @@ class SpaceNewsRepositoryImpl @Inject constructor(
             Pager(
                 config = PagingConfig(
                     pageSize = DEFAULT_PAGE_SIZE,
-                    enablePlaceholders = false,
-                    initialLoadSize = DEFAULT_PAGE_SIZE,
-                    prefetchDistance = 5
                 ),
                 remoteMediator = remoteMediator,
                 pagingSourceFactory = { articleDao.pagingSource() }
@@ -43,9 +40,6 @@ class SpaceNewsRepositoryImpl @Inject constructor(
             Pager(
                 config = PagingConfig(
                     pageSize = DEFAULT_PAGE_SIZE,
-                    enablePlaceholders = false,
-                    initialLoadSize = DEFAULT_PAGE_SIZE,
-                    prefetchDistance = 5
                 ),
                 pagingSourceFactory = {
                     SearchNewsPagingSource(

@@ -36,7 +36,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,8 +71,6 @@ fun ListScreen(
     val lazyPagingItems = state.list.collectAsLazyPagingItems()
     val snackBarHostState = remember { SnackbarHostState() }
     val listState = rememberLazyListState()
-
-    var prevCount by remember { mutableIntStateOf(lazyPagingItems.itemCount) }
     var showSearchBar by remember { mutableStateOf(true) }
 
     var isSearchExpanded by remember { mutableStateOf(false) }
@@ -85,16 +82,6 @@ fun ListScreen(
 
     BackHandler {
         navigate.invoke(GoBack)
-    }
-
-    LaunchedEffect(lazyPagingItems) {
-        snapshotFlow { lazyPagingItems.itemCount }
-            .collect { count ->
-                if (count > prevCount) {
-                    listState.animateScrollToItem(0)
-                }
-                prevCount = count
-            }
     }
 
     LaunchedEffect(listState) {
@@ -138,7 +125,10 @@ fun ListScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 AnimatedVisibility(
                     visible = showSearchBar,
                     enter = slideInVertically(initialOffsetY = { -it }, animationSpec = tween(300)),
@@ -181,6 +171,9 @@ fun ListScreen(
                     )
                 }
             }
+            lazyPagingItems.HandleLoadErrors {
+                onEvent(it)
+            }
         }
     }
 }
@@ -215,18 +208,33 @@ private fun ArticleListContent(
                         CircularProgressIndicator()
                     }
                 }
-
-                lazyPagingItems.loadState.append is LoadState.Error -> {
-                    val error = (lazyPagingItems.loadState.append as LoadState.Error).error
-                    onEvent(OnErrorSnackBar(error, isDismiss = true))
-                }
-
-                lazyPagingItems.loadState.refresh is LoadState.Error -> {
-                    val error = (lazyPagingItems.loadState.refresh as LoadState.Error).error
-                    onEvent(OnErrorSnackBar(error, actionLabel = "Try again", isDismiss = true))
-                }
             }
 
+        }
+    }
+
+}
+
+@Composable
+fun LazyPagingItems<News>.HandleLoadErrors(onEvent: (ListScreenContract.Event) -> Unit) {
+    val appendError = (loadState.append as? LoadState.Error)?.error
+        ?: (loadState.mediator?.append as? LoadState.Error)?.error
+    val refreshError = (loadState.refresh as? LoadState.Error)?.error
+        ?: (loadState.mediator?.refresh as? LoadState.Error)?.error
+
+    LaunchedEffect(appendError, refreshError) {
+        when {
+            appendError != null ->
+                onEvent(OnErrorSnackBar(appendError, isDismiss = true))
+
+            refreshError != null ->
+                onEvent(
+                    OnErrorSnackBar(
+                        refreshError,
+                        actionLabel = "Try again",
+                        isDismiss = true
+                    )
+                )
         }
     }
 }

@@ -51,17 +51,16 @@ class DetailViewModel @Inject constructor(
             is DetailScreenContract.Event.OnAddFavorite -> {
                 viewModelScope.launch {
                     if (event.news != null) {
-                        toggleFavoriteUseCase.invoke(event.news).collect { success ->
-                            setState {
-                                copy(isFavorite = success)
-                            }
-                            setEffect {
-                                ShowSnackBar(
-                                    message = if (success) "Added to favorites" else "Removed to favorites",
-                                    isDismiss = true,
-                                    actionLabel = null
-                                )
-                            }
+                        val success = toggleFavoriteUseCase.invoke(event.news)
+                        setState {
+                            copy(isFavorite = success)
+                        }
+                        setEffect {
+                            ShowSnackBar(
+                                message = if (success) "Added to favorites" else "Removed to favorites",
+                                isDismiss = true,
+                                actionLabel = null
+                            )
                         }
                     }
 

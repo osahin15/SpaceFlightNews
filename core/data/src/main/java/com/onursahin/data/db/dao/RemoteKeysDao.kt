@@ -14,8 +14,8 @@ interface RemoteKeysDao {
     @Query("SELECT * FROM remote_keys ORDER BY nextOffset DESC LIMIT 1")
     suspend fun getLastRemoteKey(): RemoteKeys?
 
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
-    suspend fun insertAll(keys: List<RemoteKeys>)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertKey(keys: RemoteKeys)
 
     @Query("DELETE FROM remote_keys")
     suspend fun clearRemoteKeys()
